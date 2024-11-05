@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: gdal_python_app
+    volumes:
+      - .:/app
+    working_dir: /app
