@@ -31,39 +31,12 @@ apt-get install -y --no-install-recommends \
     libgeos-dev \
     libproj-dev \
     swig \
-    python${PYTHON_VERSION} \
+    python3 \
     python3-pip
 
-# Install GDAL
-export CMAKE_BUILD_PARALLEL_LEVEL=$(nproc --all)
-mkdir -p "${SOURCE_DIR}"
-cd "${SOURCE_DIR}"
-wget "http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz"
-tar -xvf "gdal-${GDAL_VERSION}.tar.gz"
-cd gdal-${GDAL_VERSION}
-mkdir build
-cd build
+sudo apt install -t unstable gdal-bin
 
-cmake .. \
-    -DBUILD_PYTHON_BINDINGS=ON \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DPYTHON_INCLUDE_DIR=$(python -c "import sysconfig; print(sysconfig.get_path('include'))") \
-    -DPYTHON_LIBRARY=$(python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))") \
+export CPLUS_INCLUDE_PATH=/usr/include/gdal
+export C_INCLUDE_PATH=/usr/include/gdal
 
-cmake --build .
-cmake --build . --target install
-
-ldconfig
-
-# Clean-up
-apt-get update -y
-apt-get remove -y --purge build-essential wget
-apt-get autoremove -y
-rm -rf /var/lib/apt/lists/*
-rm -rf "${SOURCE_DIR}"
-
-# Verify installations
-python -V
-pip -V
-gdalinfo --version
-
+pip install gdal
