@@ -6,7 +6,6 @@ set -e
 PYTHON_VERSION=3.12.6
 GDAL_VERSION=3.9.2
 SOURCE_DIR=/usr/local/src/python-gdal
-PYENV_ROOT="/usr/local/pyenv"
 
 # Update system and install runtime dependencies
 apt-get update
@@ -31,21 +30,9 @@ apt-get install -y --no-install-recommends \
     cmake \
     libgeos-dev \
     libproj-dev \
-    swig
-
-# Install pyenv
-git clone https://github.com/pyenv/pyenv.git "${PYENV_ROOT}"
-echo 'export PYENV_ROOT=/usr/local/pyenv' >> /root/.bashrc
-echo 'export PATH=/usr/local/pyenv/bin:$PATH' >> /root/.bashrc
-echo 'eval "$(pyenv init -)"' >> /root/.bashrc
-export PATH="/usr/local/pyenv/bin:$PATH"
-eval "$(pyenv init -)"
-
-# Install Python using pyenv
-pyenv install "${PYTHON_VERSION}"
-pyenv global "${PYTHON_VERSION}"
-pip install --upgrade pip
-pip install numpy setuptools
+    swig \
+    python${PYTHON_VERSION} \
+    python3-pip
 
 # Install GDAL
 export CMAKE_BUILD_PARALLEL_LEVEL=$(nproc --all)
@@ -62,7 +49,6 @@ cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
     -DPYTHON_INCLUDE_DIR=$(python -c "import sysconfig; print(sysconfig.get_path('include'))") \
     -DPYTHON_LIBRARY=$(python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))") \
-    -DGDAL_PYTHON_INSTALL_PREFIX=$(pyenv prefix)
 
 cmake --build .
 cmake --build . --target install
