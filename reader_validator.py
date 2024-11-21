@@ -2,7 +2,6 @@ from enums import DataTypes
 from errors import NO_MATCHING_TYPE
 from validators.tiff import TIFFValidator
 from validators.vector import VectorValidator
-import boto3
 
 VALIDATION_MATRIX = {
     DataTypes.GDB: [
@@ -46,7 +45,7 @@ class ReaderValidator:
     def __init__(self, data_type: DataTypes, filepath: str):
         self.type = data_type
         if data_type in VECTOR_TYPES:
-            self.data = VectorValidator(StringIO(self.download_s3_file(*self.parse_s3_path(filepath))))
+            self.data = VectorValidator(filepath)
             return
         if data_type in RASTER_TYPES:
             self.data = TIFFValidator(filepath)
@@ -61,25 +60,3 @@ class ReaderValidator:
             except Exception as err:
                 errors["error_de_sistema"] = err
         return errors
-
-    def parse_s3_path(self, s3_path):
-        if not s3_path.startswith("s3://"):
-            raise ValueError("Invalid S3 path format. Must start with 's3://'.")
-        
-        path = s3_path[5:]
-        bucket, key = path.split("/", 1)
-        return bucket, key
-
-    def download_s3_file(self, bucket, key):
-        """
-        Download a file from S3 and return its content.
-        Args:
-            bucket (str): S3 bucket name.
-            key (str): S3 object key.
-        
-        Returns:
-            str: Content of the downloaded file.
-        """
-        s3 = boto3.client("s3")
-        response = s3.get_object(Bucket=bucket, Key=key)
-        return response['Body'].read().decode('utf-8')
