@@ -1,5 +1,6 @@
 from osgeo import gdal, osr, ogr
 from errors import (
+    ALLOWED_EPSG_CODES,
     BANDS_ERROR,
     COULD_NOT_READ_FILE_ERROR,
     INVALID_SPATIAL_REFERENCE,
@@ -83,15 +84,7 @@ class TIFFValidator:
         authority_code = srs.GetAuthorityCode('PROJCS')
         if authority_name is None or authority_code is None:
             return [INVALID_SPATIAL_REFERENCE]
-        allowed_epsg_codes = {
-            'Magna Origen Único': '9377',
-            'Magna Sirgas (Geográficas)': '4686',
-            'Magna Origen Este': '3118',
-            'Magna Origen Central': '3117',
-            'Magna Origen Oeste': '3115',
-            'Magna Origen Oeste Oeste': '3114',
-        }
-        if not (authority_name == 'EPSG' and authority_code in allowed_epsg_codes.values()):
+        if not (authority_name == 'EPSG' and authority_code in ALLOWED_EPSG_CODES.values()):
             return [INVALID_SPATIAL_REFERENCE]
         return []
 

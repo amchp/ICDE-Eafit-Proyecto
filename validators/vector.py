@@ -2,6 +2,7 @@ from typing import List
 import geopandas as gpd
 
 from errors import (
+    ALLOWED_EPSG_CODES,
     COULD_NOT_READ_FILE_ERROR,
     GAP_ERROR,
     INVALID_SPATIAL_REFERENCE,
@@ -96,15 +97,7 @@ class VectorValidator:
                     layer_name=layer_name
                 )]
         espg = first_layer.crs.to_epsg()
-        allowed_epsg_codes = {
-            'Magna Origen Único': '9377',
-            'Magna Sirgas (Geográficas)': '4686',
-            'Magna Origen Este': '3118',
-            'Magna Origen Central': '3117',
-            'Magna Origen Oeste': '3115',
-            'Magna Origen Oeste Oeste': '3114',
-        }
-        if str(espg) not in allowed_epsg_codes.values():
+        if str(espg) not in ALLOWED_EPSG_CODES.values():
             return [INVALID_SPATIAL_REFERENCE]
         return []
 
