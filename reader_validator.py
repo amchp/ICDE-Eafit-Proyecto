@@ -1,9 +1,9 @@
+import os
 import boto3
 from enums import DataTypes
 from errors import NO_MATCHING_TYPE
 from validators.tiff import TIFFValidator
 from validators.vector import VectorValidator
-from io import BytesIO
 
 VALIDATION_MATRIX = {
     DataTypes.GDB: [
@@ -43,17 +43,24 @@ VALIDATION_MATRIX = {
 VECTOR_TYPES = [DataTypes.GDB, DataTypes.Poligon, DataTypes.Line, DataTypes.Point]
 RASTER_TYPES = [DataTypes.DigitalTerainModel, DataTypes.Ortoimages]
 
+session = boto3.Session(
+    aws_access_key_id="",
+    aws_secret_access_key="",
+    aws_session_token="",
+    region_name="us-east-1"
+)
+
 class ReaderValidator:
-    def __init__(self, data_type: DataTypes, filepath: str):
+    def __init__(self, data_type: DataTypes, s3_uri: str, temp_dir):
         self.type = data_type
         if not (data_type in VECTOR_TYPES or data_type in RASTER_TYPES):
             raise Exception(NO_MATCHING_TYPE)
-        file = self.download_s3_file(*self.parse_s3_path(filepath))
+        filepath = self.download_s3(s3_uri, temp_dir)
         if data_type in VECTOR_TYPES:
-            self.data = VectorValidator(filepath, file)
+            self.data = VectorValidator(filepath)
             return
         if data_type in RASTER_TYPES:
-            self.data = TIFFValidator(filepath, file)
+            self.data = TIFFValidator(filepath)
             return
 
     def validate(self):
@@ -73,9 +80,37 @@ class ReaderValidator:
         bucket, key = path.split("/", 1)
         return bucket, key
 
-    def download_s3_file(self, bucket, key):
-        s3 = boto3.client("s3")
-        gpkg_buffer = BytesIO()
-        s3.download_fileobj(Bucket=bucket, Key=key, Fileobj=gpkg_buffer)
-        gpkg_buffer.seek(0)
-        return gpkg_buffer
+    def download_s3_folder(self, bucket, key, temp_dir):
+        s3 = session.client("s3")
+        response = s3.list_objects_v2(Bucket=bucket, Prefix=key)
+        if 'Contents' not in response:
+            raise FileNotFoundError(f"No files found in the specified folder: {key}")
+
+        for obj in response['Contents']:
+            file_key = obj['Key']
+            relative_path = file_key[len(key):]  # Relative path within the folder
+            local_file_path = os.path.join(temp_dir, relative_path)
+
+            # Ensure directory structure is created
+            os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
+
+            # Download the file
+            with open(local_file_path, 'wb') as f:
+                s3.download_fileobj(Bucket=bucket, Key=key, Fileobj=f)
+
+        return temp_dir
+
+    def download_s3_file(self, bucket, key, temp_dir):
+        s3 = session.client("s3")
+        file_name = os.path.basename(key)
+        local_path = os.path.join(temp_dir, file_name)
+        with open(local_path, 'wb') as f:
+            s3.download_fileobj(Bucket=bucket, Key=key, Fileobj=f)
+        return local_path
+
+    def download_s3(self, s3_uri, temp_dir):
+        bucket, key = self.parse_s3_path(s3_uri)
+        if key.endswith('/'):
+            return self.download_s3_folder(bucket, key, temp_dir)
+        else:
+            return self.download_s3_file(bucket, key, temp_dir)

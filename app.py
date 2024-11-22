@@ -1,3 +1,5 @@
+import tempfile
+import shutil
 from enums import DataTypes
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -13,14 +15,18 @@ class InputModel(BaseModel):
 async def process_data(input_data: InputModel):
     if not input_data.s3_bucket_uri.startswith("s3://"):
         raise HTTPException(status_code=400, detail="Invalid S3 bucket URI")
+    temp_dir = tempfile.mkdtemp()
     try:
         rv = ReaderValidator(
             DataTypes(input_data.data_type),
-            input_data.s3_bucket_uri
+            input_data.s3_bucket_uri,
+            temp_dir
         )
     except Exception as err:
+        shutil.rmtree(temp_dir)
         raise HTTPException(status_code=400, detail=str(err))
 
     result = rv.validate()
+    shutil.rmtree(temp_dir)
 
     return result

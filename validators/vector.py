@@ -13,7 +13,7 @@ from errors import (
 )
 
 class VectorValidator:
-    def __init__(self, filepath, file):
+    def __init__(self, filepath):
         self.check_file_path(filepath)
         try:
             self.layer_names = gpd.list_layers(file)['name']
