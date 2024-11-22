@@ -13,13 +13,13 @@ from errors import (
 )
 
 class VectorValidator:
-    def __init__(self, filepath):
+    def __init__(self, filepath, file):
         self.check_file_path(filepath)
         try:
-            self.layer_names = gpd.list_layers(filepath)['name']
+            self.layer_names = gpd.list_layers(file)['name']
         except:
             raise Exception(COULD_NOT_READ_FILE_ERROR)
-        self.layers = [gpd.read_file(filepath, layer=layer) for layer in self.layer_names]
+        self.layers = [gpd.read_file(file, layer=layer) for layer in self.layer_names]
 
     def check_file_path(self, filepath):
         allowed_suffix = ['shp', 'gdb', 'gpkg', 'kml', 'dxf']

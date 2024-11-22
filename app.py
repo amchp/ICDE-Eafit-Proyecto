@@ -19,7 +19,7 @@ async def process_data(input_data: InputModel):
             input_data.s3_bucket_uri
         )
     except Exception as err:
-        raise HTTPException(status_code=400, detail=err)
+        raise HTTPException(status_code=400, detail=str(err))
 
     result = rv.validate()
 

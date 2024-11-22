@@ -7,11 +7,15 @@ from errors import (
     RADIOMETRIC_ERROR,
     SUFFIX_ERROR,
 )
+import uuid
 
 class TIFFValidator:
-    def __init__(self, filepath):
+    def __init__(self, filepath, file):
         self.check_file_path(filepath)
-        self.dataset = gdal.Open(filepath, gdal.GA_ReadOnly)
+        print("HIIIIIIIII")
+        random_filename = f"/vsimem/{uuid.uuid4()}.tif"
+        gdal.FileFromMemBuffer(random_filename, file.read())
+        self.dataset = gdal.Open(random_filename, gdal.GA_ReadOnly)
         if not self.dataset:
             raise Exception(COULD_NOT_READ_FILE_ERROR)
 
