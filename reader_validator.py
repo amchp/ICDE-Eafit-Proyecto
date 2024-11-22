@@ -96,7 +96,7 @@ class ReaderValidator:
 
             # Download the file
             with open(local_file_path, 'wb') as f:
-                s3.download_fileobj(Bucket=bucket, Key=key, Fileobj=f)
+                s3.download_fileobj(Bucket=bucket, Key=file_key, Fileobj=f)
 
         return temp_dir
 

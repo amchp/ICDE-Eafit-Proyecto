@@ -15,7 +15,10 @@ class InputModel(BaseModel):
 async def process_data(input_data: InputModel):
     if not input_data.s3_bucket_uri.startswith("s3://"):
         raise HTTPException(status_code=400, detail="Invalid S3 bucket URI")
-    temp_dir = tempfile.mkdtemp()
+    path = (
+        input_data.s3_bucket_uri.split('/')[-1] if input_data.s3_bucket_uri[-1] != '/' else input_data.s3_bucket_uri.split('/')[-2]
+    )
+    temp_dir = tempfile.mkdtemp(suffix=path)
     try:
         rv = ReaderValidator(
             DataTypes(input_data.data_type),
