@@ -4,8 +4,29 @@ from enums import DataTypes
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from reader_validator import ReaderValidator
+import boto3
+import json
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+session = boto3.Session(
+    aws_access_key_id="",
+    aws_secret_access_key="",
+    aws_session_token="",
+    region_name="us-east-1"
+)
 
 class InputModel(BaseModel):
     data_type: int = Field(..., description="An integer representing the data type")
@@ -23,13 +44,22 @@ async def process_data(input_data: InputModel):
         rv = ReaderValidator(
             DataTypes(input_data.data_type),
             input_data.s3_bucket_uri,
-            temp_dir
+            temp_dir,
+            session
         )
     except Exception as err:
         shutil.rmtree(temp_dir)
         raise HTTPException(status_code=400, detail=str(err))
 
     result = rv.validate()
+    s3 = session.client("s3")
+    data_string = json.dumps(result, indent=2, default=str)
+
+    s3.put_object(
+        Bucket='datos-icde', 
+        Key=f'processed/{path}.json',
+        Body=data_string
+    )
     shutil.rmtree(temp_dir)
 
     return result

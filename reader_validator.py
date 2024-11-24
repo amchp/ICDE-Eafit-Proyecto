@@ -1,11 +1,10 @@
 import os
-import boto3
 from enums import DataTypes
 from errors import NO_MATCHING_TYPE
 from validators.tiff import TIFFValidator
 from validators.vector import VectorValidator
 
-VALIDATION_MATRIX = {
+ALIDATION_MATRIX = {
     DataTypes.GDB: [
         ("consistencia_de_origen", VectorValidator.check_spatial_reference_consistency),
     ],
@@ -43,15 +42,10 @@ VALIDATION_MATRIX = {
 VECTOR_TYPES = [DataTypes.GDB, DataTypes.Poligon, DataTypes.Line, DataTypes.Point]
 RASTER_TYPES = [DataTypes.DigitalTerainModel, DataTypes.Ortoimages]
 
-session = boto3.Session(
-    aws_access_key_id="",
-    aws_secret_access_key="",
-    aws_session_token="",
-    region_name="us-east-1"
-)
 
 class ReaderValidator:
-    def __init__(self, data_type: DataTypes, s3_uri: str, temp_dir):
+    def __init__(self, data_type: DataTypes, s3_uri: str, temp_dir, session):
+        self.session = session
         self.type = data_type
         if not (data_type in VECTOR_TYPES or data_type in RASTER_TYPES):
             raise Exception(NO_MATCHING_TYPE)
@@ -81,7 +75,7 @@ class ReaderValidator:
         return bucket, key
 
     def download_s3_folder(self, bucket, key, temp_dir):
-        s3 = session.client("s3")
+        s3 = self.session.client("s3")
         response = s3.list_objects_v2(Bucket=bucket, Prefix=key)
         if 'Contents' not in response:
             raise FileNotFoundError(f"No files found in the specified folder: {key}")
@@ -101,7 +95,7 @@ class ReaderValidator:
         return temp_dir
 
     def download_s3_file(self, bucket, key, temp_dir):
-        s3 = session.client("s3")
+        s3 = self.session.client("s3")
         file_name = os.path.basename(key)
         local_path = os.path.join(temp_dir, file_name)
         with open(local_path, 'wb') as f:
