@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from reader_validator import ReaderValidator
 import boto3
 import json
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 

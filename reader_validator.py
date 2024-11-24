@@ -4,7 +4,7 @@ from errors import NO_MATCHING_TYPE
 from validators.tiff import TIFFValidator
 from validators.vector import VectorValidator
 
-ALIDATION_MATRIX = {
+VALIDATION_MATRIX = {
     DataTypes.GDB: [
         ("consistencia_de_origen", VectorValidator.check_spatial_reference_consistency),
     ],
