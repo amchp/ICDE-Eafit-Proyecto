@@ -3,6 +3,17 @@ from enums import DataTypes
 from errors import NO_MATCHING_TYPE
 from validators.tiff import TIFFValidator
 from validators.vector import VectorValidator
+import json
+
+TIPOS_DE_ERRORES = [
+    "valores_nulos",
+    "dentro_de_origen",
+    "consistencia_de_origen",
+    "hueco_en_capa",
+    "superposicion",
+    "bandas",
+    "radiometria"
+]
 
 VALIDATION_MATRIX = {
     DataTypes.GDB: [
@@ -45,8 +56,9 @@ RASTER_TYPES = [DataTypes.DigitalTerainModel, DataTypes.Ortoimages]
 
 class ReaderValidator:
     def __init__(self, data_type: DataTypes, s3_uri: str, temp_dir, session):
-        self.session = session
+        self.s3_uri = s3_uri
         self.type = data_type
+        self.session = session
         if not (data_type in VECTOR_TYPES or data_type in RASTER_TYPES):
             raise Exception(NO_MATCHING_TYPE)
         filepath = self.download_s3(s3_uri, temp_dir)
@@ -64,6 +76,7 @@ class ReaderValidator:
                 errors[error] = method(self.data)
             except Exception as err:
                 errors["error_de_sistema"] = err
+        self.upload_s3(errors)
         return errors
 
     def parse_s3_path(self, s3_path):
@@ -108,3 +121,28 @@ class ReaderValidator:
             return self.download_s3_folder(bucket, key, temp_dir)
         else:
             return self.download_s3_file(bucket, key, temp_dir)
+        
+    def get_path(self):
+        return self.s3_uri.split('/')[-1] if self.s3_uri[-1] != '/' else self.s3_uri.split('/')[-2]
+        
+    def upload_s3(self, errors):
+        path = self.get_path()
+        s3 = self.session.client("s3")
+        result = self.get_results(errors)
+        data_string = json.dumps(result, indent=2, default=str)
+        folder = 'vector' if self.type in VECTOR_TYPES else 'raster'
+
+        s3.put_object(
+            Bucket='datos-icde', 
+            Key=f'processed/{folder}/{path}.json',
+            Body=data_string
+        )
+
+    def get_results(self, errors):
+        result = {}
+        for error in TIPOS_DE_ERRORES:
+            if error not in errors:
+                result[error] = 0
+            else:
+                result[error] = len(errors[error])
+        return result

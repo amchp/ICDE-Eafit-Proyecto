@@ -5,7 +5,6 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from reader_validator import ReaderValidator
 import boto3
-import json
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -53,14 +52,6 @@ async def process_data(input_data: InputModel):
         raise HTTPException(status_code=400, detail=str(err))
 
     result = rv.validate()
-    s3 = session.client("s3")
-    data_string = json.dumps(result, indent=2, default=str)
-
-    s3.put_object(
-        Bucket='datos-icde', 
-        Key=f'processed/{path}.json',
-        Body=data_string
-    )
     shutil.rmtree(temp_dir)
 
     return result
