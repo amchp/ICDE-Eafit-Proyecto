@@ -130,7 +130,7 @@ class ReaderValidator:
         s3 = self.session.client("s3")
         result = self.get_results(errors)
         data_string = json.dumps(result, indent=2, default=str)
-        folder = 'vector' if self.type in VECTOR_TYPES else 'raster'
+        folder = self.get_folder()
 
         s3.put_object(
             Bucket='datos-icde', 
@@ -146,3 +146,11 @@ class ReaderValidator:
             else:
                 result[error] = len(errors[error])
         return result
+
+    def get_folder(self):
+        if self.type in VECTOR_TYPES:
+            return 'vector'
+        if self.type == DataTypes.DigitalTerainModel:
+            return 'raster/modelo-digital'
+        if self.type == DataTypes.Ortoimages:
+            return 'raster/ortoimage'
